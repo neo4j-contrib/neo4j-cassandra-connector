@@ -1,0 +1,32 @@
+= Neo4j Cassandra Connector
+:toc:
+:toclevels: 6
+:sectnums:
+
+toc::[]
+
+== Our Goal
+
+=== What is Neo4j Cassandra Connector?
+
+It is a tool that enables you to migrate information that is inside Cassandra to a Neo4j property graph structure. 
+
+=== A little longer explanation
+
+It's way challenging to map a database like Cassandra to a graph world. But we tried our best here.
+
+==== About this first version
+
+To use this very-initial-pre-pre-alpha version, you must:
+
+* Download and install link:http://cassandra.apache.org/download/ [Cassandra].
+* Start Cassandra by running ```./bin/cassandra```
+* Download and install link: http://neo4j.com/download/other-releases/ [Neo4j]. We recommend versions 2.3.1 and above.
+* Start Neo4j.
+* Populate a Sample DB in Cassandra. Simply go to ::db_gen:: folder, start Cassandra ::cqlsh:: and invoke the command ::SOURCE '/playlist.cql'::. You can also provide the absolute path of the file. This will populate your Cassandra database with some Tracks and Artists database.
+* Run the script ::connector.py::. Invoke it with ::python connector.py::
+* Some output files will be generated. At this stage, take a look into the generated ::cypher_query_example:: file. It should contain two queries. Also, check the ::artists_names_results_:: file and ::music_results_:: file. They are both CSV files with the results of some queries performed in Cassandra. You can find those queries inside the ::connector.py:: main script. You can use the base queries that you find in ::cypher_query_example:: and replace the CSV paths with the ones that you have generated. Then simply add the queries to Neo4j console and run them
+
+You should end up seeing several ::artist:: and ::track:: nodes and several relationships between them:
+
+image::resources/images/intro.png[Initial Import to Neo4j]
