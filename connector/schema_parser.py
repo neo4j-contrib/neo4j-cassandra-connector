@@ -26,6 +26,9 @@ class SchemaParser(object):
         formatted_line = formatted_line.replace(")"," { })")
         yaml_file.write(formatted_line)
         continue
+      newline_match = re.match("\n", line)
+      if (newline_match):
+        continue
       formatted_line = line.replace(",","")
       formatted_line = formatted_line.replace("\n", ": { }\n")
       yaml_file.write(formatted_line)
