@@ -4,13 +4,16 @@
 from cassandra.cluster import Cluster
 from cassandra.metadata import Metadata
 from cassandra.metadata import KeyspaceMetadata
+import re
+from schema_parser import SchemaParser
 
 cluster = Cluster()
 session = cluster.connect('playlist')
 meta_str = session.cluster.metadata.export_schema_as_string()
 keyspace = session.cluster.metadata.keyspaces["playlist"]
-schema_file = open('schema_', 'w+')
-schema_file.write(keyspace.export_as_string())
+parser = SchemaParser(keyspace.export_as_string())
+parser.parse()
+
 music_results_file = open('music_results_', 'w+')
 rows = session.execute('SELECT * FROM track_by_id')
 for track in rows:
@@ -23,12 +26,12 @@ for track in rows:
   result = "{track_id}, {artist}, {genre}, {music_file}, {track}, {track_length_in_seconds} \n".format(track_id=track_id, artist=artist, genre=genre, music_file=music_file, track=trackk, track_length_in_seconds=track_length_in_seconds)
   music_results_file.write(result)
   
-# artists_results_file = open('artists_results_', 'w+')
-# rows = session.execute('SELECT * FROM track_by_artist')
-# for track in rows:
-#   results = (track.artist, track.track, track.track_id, track.music_file, track.starred, track.track_length_in_seconds)
-#   artists_results_file.write(str(results))
-#   artists_results_file.write("\n")
+  # artists_results_file = open('artists_results_', 'w+')
+  # rows = session.execute('SELECT * FROM track_by_artist')
+  # for track in rows:
+  #   results = (track.artist, track.track, track.track_id, track.music_file, track.starred, track.track_length_in_seconds)
+  #   artists_results_file.write(str(results))
+  #   artists_results_file.write("\n")
 
 artists_names_results_file = open('artists_names_results_', 'w+')
 rows = session.execute('SELECT * FROM artists_by_first_letter')
