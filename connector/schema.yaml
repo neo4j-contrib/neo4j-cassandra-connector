@@ -1,0 +1,46 @@
+CREATE TABLE playlist.statistics:
+    counter_name text PRIMARY KEY: {p}
+    counter_value counter: {p}
+CREATE TABLE playlist.track_by_artist:
+    artist text: {r}
+    track text: {p}
+    track_id uuid: {p}
+    genre text: {p}
+    music_file text: {p}
+    starred boolean: {p}
+    track_length_in_seconds int: {p}
+    PRIMARY KEY (artist {p} track {p} track_id {p})
+CREATE TABLE playlist.users:
+    username text PRIMARY KEY: {p}
+    password text: {p}
+    playlist_names set<text>: {p}
+CREATE TABLE playlist.artists_by_first_letter:
+    first_letter text: {p}
+    artist text: {r}
+    PRIMARY KEY (first_letter {p} artist {p})
+CREATE TABLE playlist.track_by_id:
+    track_id uuid PRIMARY KEY: {p}
+    artist text: {r}
+    genre text: {p}
+    music_file text: {p}
+    track text: {p}
+    track_length_in_seconds int: {p}
+CREATE TABLE playlist.playlist_tracks:
+    username text: {p}
+    playlist_name text: {p}
+    sequence_no timestamp: {p}
+    artist text: {r}
+    genre text: {p}
+    track_id uuid: {p}
+    track_length_in_seconds int: {p}
+    track_name text: {p}
+    PRIMARY KEY ((username {p} playlist_name {p}) {p} sequence_no {p})
+CREATE TABLE playlist.track_by_genre:
+    genre text: {p}
+    artist text: {r}
+    track text: {p}
+    track_id uuid: {p}
+    music_file text: {p}
+    starred boolean: {p}
+    track_length_in_seconds int: {p}
+    PRIMARY KEY (genre {p} artist {p} track {p} track_id {p})
