@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import re
+import os
 
 class SchemaParser(object):
   def __init__(self, schema):
@@ -10,7 +11,7 @@ class SchemaParser(object):
     schema_file = open('schema_', 'w+')
     schema_file.write(self.schema_str)
     schema_file = open('schema_', 'r')
-    yaml_file = open('schema.yaml', 'w+')
+    yaml_file = open(os.path.join(os.getcwd(),'schema.yaml'), 'w+')
     for line in schema_file:
       create_table_match = re.match("CREATE TABLE (.[^\(]*)", line)
       if (create_table_match):
