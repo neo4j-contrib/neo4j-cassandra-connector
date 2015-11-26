@@ -25,17 +25,27 @@ class CypherQueriesGenerator(object):
     return self.nodes
 
   # def build_queries(self, nodes, [track_by_id, artists_by_first_letter], ["music_results.csv", "artists_names_results.csv"])
-    def build_queries(self, nodes, tables, result_csvs):
-      cypher_file = open('cypher_', 'w+')
-      for idx, unique_name in enumerate(tables):
-        node = get_node(unique_name, nodes)
+  def build_queries(self, nodes, tables, result_csvs):
+    cypher_file = open('cypher_', 'w+')
+    columns = self.analyse_csv(result_csvs)
+    info_tuple = zip(tables, result_csvs, columns)
+    print(info_tuple)
+    # for idx, unique_name in enumerate(tables):
+    #   node = self.get_node(unique_name, nodes)
+      # query = "LOAD CSV FROM " + result_csvs[idx] + "AS LINE CREATE (n" + node.label + "{ first_letter: line[0], artist: line[1] } );"
 
+  def analyse_csv(self, result_csvs):
+    columns = []
+    for csv in result_csvs:
+      f = open(csv, 'r')
+      column = len(f.readline().split(","))
+      columns.append(column)
+    return columns
         
   def get_node(self, unique_name, nodes):
     for node in nodes:
       if(node.unique_name == unique_name):
         return node 
-
 
   def format_node(self, create_table_match):
     node = (str(create_table_match.group(1)))[:-1]

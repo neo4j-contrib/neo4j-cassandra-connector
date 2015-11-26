@@ -47,7 +47,7 @@ for artist in rows:
 
 cypher_queries_gen = CypherQueriesGenerator(keyspace)
 nodes = cypher_queries_gen.generate()
-cypher_queries_gen.build_queries(nodes, [track_by_id, artists_by_first_letter], ["music_results.csv", "artists_names_results.csv"])
+cypher_queries_gen.build_queries(nodes, ["track_by_id", "artists_by_first_letter"], ["music_results.csv", "artists_names_results.csv"])
 
 
 cypher_file = open('cypher_query_example', 'w+')
