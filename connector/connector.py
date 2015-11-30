@@ -5,16 +5,20 @@ from cassandra.cluster import Cluster
 from cassandra.metadata import Metadata
 from cassandra.metadata import KeyspaceMetadata
 import re
+import sys
 from schema_parser import SchemaParser
+from cypher_queries_generator import CypherQueriesGenerator
+
 
 cluster = Cluster()
 session = cluster.connect('playlist')
 meta_str = session.cluster.metadata.export_schema_as_string()
 keyspace = session.cluster.metadata.keyspaces["playlist"]
-parser = SchemaParser(keyspace.export_as_string())
-parser.parse()
+if(len(sys.argv) <= 1):
+  parser = SchemaParser(keyspace.export_as_string())
+  parser.parse()
 
-music_results_file = open('music_results_', 'w+')
+music_results_file = open('music_results.csv', 'w+')
 rows = session.execute('SELECT * FROM track_by_id')
 for track in rows:
   track_id = str(track.track_id)
@@ -33,13 +37,17 @@ for track in rows:
   #   artists_results_file.write(str(results))
   #   artists_results_file.write("\n")
 
-artists_names_results_file = open('artists_names_results_', 'w+')
+artists_names_results_file = open('artists_names_results.csv', 'w+')
 rows = session.execute('SELECT * FROM artists_by_first_letter')
 for artist in rows:
   first_letter = (artist.first_letter).encode('utf-8')
   artistt = (artist.artist).encode('utf-8')
   result = "{first_letter}, {artist} \n".format(first_letter=first_letter, artist=artistt)
   artists_names_results_file.write(result)
+
+cypher_queries_gen = CypherQueriesGenerator(keyspace)
+nodes = cypher_queries_gen.generate()
+cypher_queries_gen.build_queries(nodes, ["track_by_id", "artists_by_first_letter"], ["music_results.csv", "artists_names_results.csv"])
 
 
 cypher_file = open('cypher_query_example', 'w+')
