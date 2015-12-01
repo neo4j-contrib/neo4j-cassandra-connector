@@ -17,8 +17,6 @@ class SchemaParserTestCase(unittest.TestCase):
     self.schema_str = schema_file.read()
     self.parser = SchemaParser(self.schema_str)
 
-  def tearDown(self):
-    os.remove('schema.yaml')
 
   def test_parse(self):
     self.parser.parse()
