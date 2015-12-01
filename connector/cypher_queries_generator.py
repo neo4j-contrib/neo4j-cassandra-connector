@@ -1,5 +1,5 @@
 import re
-import os
+import inspect, os
 from collections import namedtuple
 from node_structure import NodeStructure
 
@@ -35,11 +35,12 @@ class CypherQueriesGenerator(object):
     for element in info_tuple:
       element = Builder(element[0], element[1], element[2], element[3])
       params_hash = self.build_params_hash(element.node_structure, element.column_size)
+      params_hash_str = str(params_hash).replace("\'", "")
+      relationships_query = ""
       if(element[3].relationships):
         relationships_query = self.build_relationships(element.node_structure)
-        print(relationships_query)
-      #AS LINE MATCH (b:playlist:artist) WHERE b.artist=line[1] 
-      query = "LOAD CSV FROM {csv_file} AS LINE CREATE (n{label} {params} );\n".format(csv_file=element.csv_file, label=element.node_structure.label, params=str(params_hash))
+      path = "file://" + os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+      query = "LOAD CSV FROM \'{path}/{csv_file}\' AS line {relationships_query} MERGE ({label} {params} );\n".format(path=path, csv_file=element.csv_file, relationships_query=relationships_query, label=element.node_structure.label, params=params_hash_str)
       cypher_file.write(query)
     
   def build_relationships(self, node):
@@ -48,7 +49,8 @@ class CypherQueriesGenerator(object):
     for rel in node.relationships.keys():
       idx = node.properties.keys().index(rel)
       key = rel
-    query = "AS LINE MATCH (n{label} WHERE n. {key}=line[{idx}] ".format(label=node.label, key=key, idx=idx)
+      label = (node.label.split(":")[1])
+    query = "OPTIONAL MATCH (n:{label}) WHERE n.{key}=line[{idx}] ".format(label=label, key=key, idx=idx)
     return query
 
   def analyse_node(self, tables, nodes):
