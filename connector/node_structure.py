@@ -3,5 +3,7 @@ class NodeStructure(object):
     self.unique_name = ""
     self.label = ""
     self.properties = {}
+    self.constraints = []
+    self.indexes = []
     self.relationships = {}
 
