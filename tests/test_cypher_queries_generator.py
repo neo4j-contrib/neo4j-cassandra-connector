@@ -20,20 +20,31 @@ class CypherQueriesGeneratorTestCase(unittest.TestCase):
     #filled YAML file analyser
     self.cypher_queries_gen = CypherQueriesGenerator(self.keyspace)
     nodes = self.cypher_queries_gen.generate()
-    print(nodes)
     self.assertEqual(len(nodes), 6)
+
+  def test_analyse_csv(self):
+    # check number of columns on each csv result file
+    cypher_queries_gen = CypherQueriesGenerator(self.keyspace)
+    nodes = cypher_queries_gen.generate()
+    columns = cypher_queries_gen.analyse_csv(["music_results.csv"])
+    self.assertEqual(columns, [6])
+
+  def test_analyse_node(self):
+    cypher_queries_gen = CypherQueriesGenerator(self.keyspace)
+    nodes = cypher_queries_gen.generate()
+    nodes = cypher_queries_gen.analyse_node(["track_by_id"], nodes)
+    self.assertEqual(len(nodes), 1)
+    print(nodes[0])
 
   def test_build_queries(self):
     #filled YAML file analyser
     self.cypher_queries_gen = CypherQueriesGenerator(self.keyspace)
     nodes = self.cypher_queries_gen.generate()
-    self.cypher_queries_gen.build_queries(nodes, ["track_by_id"], ["music_results.csv"])
+    self.cypher_queries_gen.build_queries(["track_by_id"], ["music_results.csv"])
     cypher_file = open('cypher_', 'r')
     statement = cypher_file.read()
     path = str(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
-    expected = "MERGE (:playlist:track_by_id {{genre: line[2], artist: line[1], track: line[0], track_length_in_seconds: line[3], music_file: line[4], track_id: line[5]}} );\n".format(path=path)
-    self.assertTrue(statement.endswith(expected))
-    self.assertTrue(statement.startswith("LOAD CSV"))
+    self.assertTrue(statement.startswith("LOAD CSV WITH HEADERS"))
 
 if __name__ == '__main__':
   unittest.main()

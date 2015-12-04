@@ -6,7 +6,7 @@ CREATE TABLE playlist.track_by_artist:
     track text: {p}
     track_id uuid: {i}
     genre text: {p}
-    music_file text: {pp}
+    music_file text: {p}
     starred boolean: {p}
     track_length_in_seconds int: {p}
     PRIMARY KEY (artist {i}, track {p}, track_id {i})
@@ -17,9 +17,9 @@ CREATE TABLE playlist.users:
 CREATE TABLE playlist.artists_by_first_letter:
     first_letter text: {p}
     artist text: {r}
-    PRIMARY KEY (first_letter {p}, artist {i})
+    PRIMARY KEY (first_letter {p}, artist {u})
 CREATE TABLE playlist.track_by_id:
-    track_id uuid PRIMARY KEY: {i}
+    track_id uuid PRIMARY KEY: {u}
     artist text: {r}
     genre text: {p}
     music_file text: {p}
