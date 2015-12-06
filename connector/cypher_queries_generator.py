@@ -50,7 +50,8 @@ class CypherQueriesGenerator(object):
       path = "file://" + os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
       query = "LOAD CSV WITH HEADERS FROM \'{path}/{csv_file}\' AS line MERGE (c{label} {uniques}) SET c += {params};\n".format(path=path, csv_file=element.csv_file, label=element.node_structure.label, uniques=unique_hash_str, params=params_hash_str)
       cypher_file.write(query)
-    self.build_relationships(cypher_file, info_tuple, nodes_structure)
+    rel_tuple = zip(tables, result_csvs, columns, nodes_structure)
+    self.build_relationships(cypher_file, rel_tuple, nodes_structure)
 
   def build_end_indexes(self, end_pk_match):
     keys = end_pk_match.lstrip().split(" PRIMARY KEY: ")
