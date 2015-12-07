@@ -1,46 +1,46 @@
 CREATE TABLE playlist.statistics:
-    counter_name text PRIMARY KEY: { }
-    counter_value counter: { }
+    counter_name text PRIMARY KEY: {}
+    counter_value counter: {}
 CREATE TABLE playlist.track_by_artist:
-    artist text: { }
-    track text: { }
-    track_id uuid: { }
-    genre text: { }
-    music_file text: { }
-    starred boolean: { }
-    track_length_in_seconds int: { }
-    PRIMARY KEY (artist { } track { } track_id { })
+    artist text: {}
+    track text: {}
+    track_id uuid: {}
+    genre text: {}
+    music_file text: {}
+    starred boolean: {}
+    track_length_in_seconds int: {}
+    PRIMARY KEY (artist {}, track {}, track_id {})
 CREATE TABLE playlist.users:
-    username text PRIMARY KEY: { }
-    password text: { }
-    playlist_names set<text>: { }
+    username text PRIMARY KEY: {}
+    password text: {}
+    playlist_names set<text>: {}
 CREATE TABLE playlist.artists_by_first_letter:
-    first_letter text: { }
-    artist text: { }
-    PRIMARY KEY (first_letter { } artist { })
+    first_letter text: {}
+    artist text: {}
+    PRIMARY KEY (first_letter {}, artist {})
 CREATE TABLE playlist.track_by_id:
-    track_id uuid PRIMARY KEY: { }
-    artist text: { }
-    genre text: { }
-    music_file text: { }
-    track text: { }
-    track_length_in_seconds int: { }
+    track_id uuid PRIMARY KEY: {}
+    artist text: {}
+    genre text: {}
+    music_file text: {}
+    track text: {}
+    track_length_in_seconds int: {}
 CREATE TABLE playlist.playlist_tracks:
-    username text: { }
-    playlist_name text: { }
-    sequence_no timestamp: { }
-    artist text: { }
-    genre text: { }
-    track_id uuid: { }
-    track_length_in_seconds int: { }
-    track_name text: { }
-    PRIMARY KEY ((username { } playlist_name { }) { } sequence_no { })
+    username text: {}
+    playlist_name text: {}
+    sequence_no timestamp: {}
+    artist text: {}
+    genre text: {}
+    track_id uuid: {}
+    track_length_in_seconds int: {}
+    track_name text: {}
+    PRIMARY KEY ((username {}, playlist_name {}) {}, sequence_no {})
 CREATE TABLE playlist.track_by_genre:
-    genre text: { }
-    artist text: { }
-    track text: { }
-    track_id uuid: { }
-    music_file text: { }
-    starred boolean: { }
-    track_length_in_seconds int: { }
-    PRIMARY KEY (genre { } artist { } track { } track_id { })
+    genre text: {}
+    artist text: {}
+    track text: {}
+    track_id uuid: {}
+    music_file text: {}
+    starred boolean: {}
+    track_length_in_seconds int: {}
+    PRIMARY KEY (genre {}, artist {}, track {}, track_id {})
