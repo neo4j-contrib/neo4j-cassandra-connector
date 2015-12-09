@@ -44,3 +44,4 @@ CREATE TABLE playlist.track_by_genre:
     starred boolean: {}
     track_length_in_seconds int: {}
     PRIMARY KEY (genre {}, artist {}, track {}, track_id {})
+NEO4J CREDENTIALS (url {}, user {}, password {}) 
