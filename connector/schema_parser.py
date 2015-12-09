@@ -33,3 +33,7 @@ class SchemaParser(object):
       formatted_line = line.replace(",","")
       formatted_line = formatted_line.replace("\n", ": {}\n")
       yaml_file.write(formatted_line)
+    self.add_neo4j_credentials(yaml_file)
+
+  def add_neo4j_credentials(self, yaml_file):
+    yaml_file.write("NEO4J CREDENTIALS (url {}, user {}, password {}) \n")

@@ -2,12 +2,14 @@ import re
 import inspect, os
 from collections import namedtuple
 from node_structure import NodeStructure
+from cypher_runner import CypherRunner
 
 class CypherQueriesGenerator(object):
   def __init__(self, keyspace):
     self.keyspace = keyspace
     self.node = None
     self.nodes = []
+    self.neo4j_config_hash = {}
 
   def generate(self):
     yaml_file = open(os.path.join(os.getcwd(),'schema.yaml'), 'r')
@@ -27,7 +29,11 @@ class CypherQueriesGenerator(object):
       if(end_pk_match):
         self.build_end_indexes(end_pk_match.group(0))
         continue
+      neo4j_conf_match = re.match("NEO4J CREDENTIALS \((.*)\)", line)
+      if (neo4j_conf_match):
+        self.get_neo4j_credentials(neo4j_conf_match)
       self.collect_filled_parameters(line)
+    yaml_file.close()
     return self.nodes
 
   def build_queries(self, tables, result_csvs):
@@ -52,6 +58,15 @@ class CypherQueriesGenerator(object):
       cypher_file.write(query)
     rel_tuple = zip(tables, result_csvs, columns, nodes_structure)
     self.build_relationships(cypher_file, rel_tuple, nodes_structure)
+    cypher_file.close()
+    runner = CypherRunner(self.neo4j_config_hash)
+    runner.run()
+
+  def get_neo4j_credentials(self, neo4j_conf_match):
+    configs = neo4j_conf_match.group(1).split(",")
+    for config in configs:
+      key, value = config.split(" {")
+      self.neo4j_config_hash.update({key.lstrip(): value.replace("}", "")})
 
   def build_end_indexes(self, end_pk_match):
     keys = end_pk_match.lstrip().split(" PRIMARY KEY: ")
