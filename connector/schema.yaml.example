@@ -24,7 +24,7 @@ CREATE TABLE playlist.track_by_id:
     genre text: {p}
     music_file text: {p}
     track text: {p}
-    track_length_in_seconds int: {}
+    track_length_in_seconds int: {p}
 CREATE TABLE playlist.playlist_tracks:
     username text: {p}
     playlist_name text: {p}

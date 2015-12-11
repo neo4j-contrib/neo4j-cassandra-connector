@@ -39,8 +39,3 @@ cypher_queries_gen = CypherQueriesGenerator(keyspace)
 cypher_queries_gen.generate()
 cypher_queries_gen.build_queries(["track_by_id", "artists_by_first_letter"], ["music_results.csv", "artists_names_results.csv"])
 
-
-class Neo4jNodeBuilder(object):
-  def __init__(self, keyspace, schema):
-    self.keyspace = keyspace
-    self.schema = schema
