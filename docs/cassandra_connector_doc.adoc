@@ -136,7 +136,11 @@ writer.writerows([(track.track_id, track.artist, track.genre, track.music_file, 
 
 This section contains the query itself. It should be saved into a CSV file.
 
-**It is important to separate different querie results into different CSV files**. Note our example. We are querying over **track_by_id** and **artists_by_first_letter**. Each result set has its own CSV file, as you can see below in the following section:
+The first step here is to create a CSV file. We have named this first example as __'music_results.csv'__. Then CQL query is invoked. We use Python CSV library to manage the file write. We acquire a writer object, then we write the headers, with __writerow__ method (corresponding to column key names) and on the sequence we write the results, with __writerows__. 
+
+**Important points here** For the CSV header, please keep the same names that you have in your schema. Mistyped names will be unconsidered. Also, declare all the fields, without omitting any of them. At the moment we support only CSVs with all the columns of a table. This is necessary for a match with an intermediate class that we use for Nodes and Relationships generation.
+
+**It is important to separate different queries results into different CSV files**. Note our example. We are querying over **track_by_id** and **artists_by_first_letter**. Each result set has its own CSV file, as you can see below in the following section:
 
 ```
 artists_names_results_file = codecs.open('artists_names_results.csv', encoding='utf-8', mode='w+')
@@ -157,9 +161,9 @@ __build_queries__ receives an array of the tables that should be brought to Neo4
 
 ==== Mapping data into Cassandra to Neo4j
 
-The YAML file will be parsed into Cypher queries. A file called **cypher_** will be generated in your directory. It contains the Cypher queries that can be passed to Neo4j.
+The YAML file will be parsed into Cypher queries. A file called **cypher_** will be generated in your directory. It contains the Cypher queries that will generate Nodes and Relationship into a graph structure. After generated, the queries are automatically executed by http://py2neo.org/2.0/[Py2Neo].
 
-**The keyspace from cassandra will be translated as a label for every generated node in Neo4j.**
+**The keyspace from Cassandra will be translated as a label for every generated node in Neo4j.**
 
 Basically we were willing to have __Track__ nodes and __Artist__ nodes, connected by artist fields. We also wanted to make a constraint on artist by it's name - we could not have two different nodes with similar artist names.
 
@@ -196,3 +200,12 @@ CREATE TABLE detection.holder:
     PRIMARY KEY (bank {})
 ```
 Fraud detection has been a nice use case for graphs. Check this https://github.com/neo4j-contrib/gists/blob/master/other/BankFraudDetection.adoc[reference].
+
+
+==== Further Work
+
+We are aware that this first version is very tight to a single example. We plan to expand this connector to more general cases, improve mappings, add tricks and smart YAML files that can infer some patterns into Cassandra Schema and suggest an initial translate to Neo4j.
+
+We also plan to add more flexibility to Neo4j mapping and avoid performance issues. We are aware that declaring all fields might be a little inconvenient too, so we plan to automate this process in order to make it less verbose.
+
+Another further work consists into organising better directories to the generated files and add Travis CI support, together with a better integration tests suite.
