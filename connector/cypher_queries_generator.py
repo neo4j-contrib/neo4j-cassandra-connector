@@ -5,14 +5,15 @@ from node_structure import NodeStructure
 from cypher_runner import CypherRunner
 
 class CypherQueriesGenerator(object):
-  def __init__(self, keyspace):
+  def __init__(self, keyspace, schema_file):
     self.keyspace = keyspace
     self.node = None
     self.nodes = []
     self.neo4j_config_hash = {}
+    self.schema_file = schema_file
 
   def generate(self):
-    yaml_file = open(os.path.join(os.getcwd(),'schema.yaml'), 'r')
+    yaml_file = open(self.schema_file, 'r')
     for line in yaml_file:
       create_table_match = re.match("CREATE TABLE (.*)", line)
       if (create_table_match):

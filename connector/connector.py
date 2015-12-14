@@ -35,12 +35,7 @@ writer = csv.writer(artists_names_results_file)
 writer.writerow(['first_letter', 'artist'])
 writer.writerows([(artistt.first_letter, artistt.artist) for artistt in rows])
 
-cypher_queries_gen = CypherQueriesGenerator(keyspace)
+cypher_queries_gen = CypherQueriesGenerator(keyspace, sys.argv[1])
 cypher_queries_gen.generate()
 cypher_queries_gen.build_queries(["track_by_id", "artists_by_first_letter"], ["music_results.csv", "artists_names_results.csv"])
 
-
-class Neo4jNodeBuilder(object):
-  def __init__(self, keyspace, schema):
-    self.keyspace = keyspace
-    self.schema = schema

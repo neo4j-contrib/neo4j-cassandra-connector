@@ -17,22 +17,196 @@ It's way challenging to map a database like Cassandra to a graph world. But we t
 
 ==== About this first version
 
-To use this very-initial-pre-pre-alpha version, you must:
+The main goal here is to provide a direct way to map a Cassandra schema to Neo4j and import result sets that come from Cassandra columns to Neo4j graph model, generating a meaningful representation of nodes and relationships. This translation is made by inserting CQL queries via Python Cassandra Driver into a  file, filling up a YAML file representing the schema of a keyspace and then running the queries. The final output should be a graph into Neo4j with a file containing the corresponding Cypher queries. The following sections will guide through this process and also provide some mapping examples.
 
-* Download and install link:http://cassandra.apache.org/download/ [Cassandra].
+**At this point, only Python 3 is supported**. Please be aware that Python 2 can bring up encoding problems.
+
+===== Populating an initial Cassandra Database
+
+To use this initial version, you must:
+
+* Download and install link: http://cassandra.apache.org/download/[Cassandra].
 * Start Cassandra by running ```./bin/cassandra```
-* Download and install link: http://neo4j.com/download/other-releases/ [Neo4j]. We recommend versions 2.3.1 and above.
+* Download and install link: http://neo4j.com/download/other-releases/[Neo4j]. We recommend versions 2.3.1 and above.
 * Start Neo4j.
 * Populate a Sample DB in Cassandra. Simply go to ::db_gen:: folder, start Cassandra ::cqlsh:: and invoke the command ::SOURCE '/playlist.cql'::. You can also provide the absolute path of the file. This will populate your Cassandra database with some Tracks and Artists database.
-* Navigate to the subfolder __connector/__
-* Run the script ::connector.py::. Invoke it with ::python connector.py::
-* Some output files will be generated. At this stage, take a look into the generated ::schema.yaml:: file. It contains a YAML representation of Cassandra Schema. Every table will be translated as a Node in Neo4j. Note the __{}__. You must determine if the information on the table will be a node property (fill with __{p}__) or an endpoint for a relationship (fill with __{r}__). An example of filled YAML file can be found on __connector/schema.yaml.example__.
-* After filling up the empty brackets, save the file and run the script ::connector.py::, now specifying the __filled__ option:
+
+==== Generating a schema.yaml file
+
+After populating your initial database, you must generate a file to properly map a Cassandra Schema to a graph. Do the following:
+
+* Into the project directory, navigate to the subfolder __connector/__
+* Run the script ::connector.py::. Invoke it with ::python connector.py::. Note that Python ```cassandra-driver``` is required.
+* Some output files will be generated. At this stage, take a look into the generated ::schema.yaml:: file. It contains a YAML representation of Cassandra Schema. 
+
+The next step consists into filling up this file with mapping information. Check out the next section for more information.
+
+==== Filling up schema.yaml file
+
+__schema.yaml__ file might have the following look and feel:
+
 ```
-python connector.py filled
+CREATE TABLE playlist.artists_by_first_letter:
+    first_letter text: {}
+    artist text: {}
+    PRIMARY KEY (first_letter {}, artist {})
+CREATE TABLE playlist.track_by_id:
+    track_id uuid PRIMARY KEY: {}
+    artist text: {}
+    genre text: {}
+    music_file text: {}
+    track text: {}
+    track_length_in_seconds int: {}
+NEO4J CREDENTIALS (url {}, user {}, password {}) 
+```    
+
+**Every table will be translated as a Node in Neo4j.**
+
+Note the __{}__. It's possible to fill them up with the following options:
+
+* _p_, for regular node property (fill with __{p}__),
+* __r__ for relationship (fill with __{r}__),
+* __u__ for unique constraint field (fill with __{u}__) 
+
+For example:
+
 ```
-*The YAML file will be parsed into Cypher queries. A file called **cypher_** will be generated in your directory. It contains the Cypher queries that can be passed to Neo4j.
+CREATE TABLE playlist.artists_by_first_letter:
+    first_letter text: {p}
+    artist text: {r}
+    PRIMARY KEY (first_letter {p}, artist {u})
+CREATE TABLE playlist.track_by_id:
+    track_id uuid PRIMARY KEY: {u}
+    artist text: {r}
+    genre text: {p}
+    music_file text: {p}
+    track text: {p}
+    track_length_in_seconds int: {p}
+```
+
+There's also one last line at the end of the file, that requires Neo4j address and credentials:
+
+```
+NEO4J CREDENTIALS (url {"http://localhost:7474/db/data"}, user {"neo4j"}, password {"neo4jpasswd"}) 
+```
+
+If you have turned off authentication, you can leave __user__ and __password__ fields empty:
+```
+NEO4J CREDENTIALS (url {"http://localhost:7474/db/data"}, user {}, password {}) 
+```
+
+An example of filled YAML file can be found on __connector/schema.yaml.example__.
+
+===== Important points to consider when mapping:
+
+For this first version, we still do not have a strong error handling. So please be aware of the following aspects:
+
+* If you fill up a field as a relationship willing to have a relationship between two nodes, please map the field with __r__ in both table. In the example above, note that __artist__ is mapped as __r__ in both tables, __playlist.track_by_artist__ and __playlist.track_by_id__.
+
+* Choose carefully your constraints. Be sure that you will not have more than one node with the property thar you selected for creating this constraint. __u__ is going to work **only** for lines that have been marked with __PRIMARY KEY__. Example:
+```PRIMARY KEY (first_letter {p}, artist {u})``` 
+Above example denotes that __artist__ is selected to be a constraint. We cannot have more than one node with the same artist. Please keep that in mind.
+
+* To avoid performance issues, try to promote fields to constraints if you notice that it would reduce the number of reduced nodes (of course considering the meaningfulness of the modelling).
+
+==== Running the script with filled schema.yaml file
+
+After filling up the empty brackets, save the file and run the script ::connector.py::, now specifying the path of __schema.yaml__ file, in case you have changed its default directory:
+```
+python connector.py schema.yaml
+```
+(The above example assumes that you are under /connector folder and the proper;y filled __schema.yaml__ file is placed there).
+
+Also, it is into this file that you must specify the queries that will have a result set transferred to Neo4j. Let's analyse the basic structure:
+
+```
+cluster = Cluster()
+session = cluster.connect('playlist')
+meta_str = session.cluster.metadata.export_schema_as_string()
+keyspace = session.cluster.metadata.keyspaces["playlist"]```
+
+The section above declares Cassandra specific connection information plus a specific Keyspace (in this case, __playlist__). 
+
+```
+music_results_file = codecs.open('music_results.csv', encoding='utf-8', mode='w+')
+rows = session.execute('SELECT * FROM track_by_id')
+writer = csv.writer(music_results_file)
+writer.writerow(['track_id', 'artist', 'genre', 'music_file', 'track', 'track_length_in_seconds'])
+writer.writerows([(track.track_id, track.artist, track.genre, track.music_file, track.track, track.track_length_in_seconds) for track in rows])
+```
+
+This section contains the query itself. It should be saved into a CSV file.
+
+The first step here is to create a CSV file. We have named this first example as __'music_results.csv'__. Then CQL query is invoked. We use Python CSV library to manage the file write. We acquire a writer object, then we write the headers, with __writerow__ method (corresponding to column key names) and on the sequence we write the results, with __writerows__. 
+
+**Important points here** For the CSV header, please keep the same names that you have in your schema. Mistyped names will be unconsidered. Also, declare all the fields, without omitting any of them. At the moment we support only CSVs with all the columns of a table. This is necessary for a match with an intermediate class that we use for Nodes and Relationships generation.
+
+**It is important to separate different queries results into different CSV files**. Note our example. We are querying over **track_by_id** and **artists_by_first_letter**. Each result set has its own CSV file, as you can see below in the following section:
+
+```
+artists_names_results_file = codecs.open('artists_names_results.csv', encoding='utf-8', mode='w+')
+rows = session.execute('SELECT * FROM artists_by_first_letter')
+writer = csv.writer(artists_names_results_file)
+writer.writerow(['first_letter', 'artist'])
+writer.writerows([(artistt.first_letter, artistt.artist) for artistt in rows])
+```
+
+Last section contains the Cypher queries generation:
+
+```
+cypher_queries_gen = CypherQueriesGenerator(keyspace)
+cypher_queries_gen.generate()
+cypher_queries_gen.build_queries(["track_by_id", "artists_by_first_letter"], ["music_results.csv", "artists_names_results.csv"])
+```
+__build_queries__ receives an array of the tables that should be brought to Neo4j and the corresponding array of files containing the CSV files with the respective result sets. Let's check the expected output into the next section.
+
+==== Mapping data into Cassandra to Neo4j
+
+The YAML file will be parsed into Cypher queries. A file called **cypher_** will be generated in your directory. It contains the Cypher queries that will generate Nodes and Relationship into a graph structure. After generated, the queries are automatically executed by http://py2neo.org/2.0/[Py2Neo].
+
+**The keyspace from Cassandra will be translated as a label for every generated node in Neo4j.**
+
+Basically we were willing to have __Track__ nodes and __Artist__ nodes, connected by artist fields. We also wanted to make a constraint on artist by it's name - we could not have two different nodes with similar artist names.
 
 You should end up seeing several ::artist:: and ::track:: nodes and several relationships between them:
 
 image::resources/images/intro.png[Initial Import to Neo4j]
+
+==== Other databases
+
+Another example of information that we could store into Cassandra and have a corresponding mapping into Neo4j would be a Fraud Detection System. For example, we could have a Schema similar to:
+
+```
+CREATE TABLE detection.bank_by_holder:
+    user text: {}
+    bank text: {}
+    bank_id: {}
+    last_transaction datetime: {} 
+    PRIMARY KEY (bank {i})
+CREATE TABLE detection.address_by_holder:
+    user text: {}
+    address text: {}
+    last_update datetime: {} 
+    PRIMARY KEY (bank {})
+CREATE TABLE detection.credit_card_by_holder:
+    user text: {}
+    identifier text: {}
+    last_update datetime: {} 
+    expire_date datetime: {} 
+    PRIMARY KEY (bank {})
+CREATE TABLE detection.holder:
+    username text PRIMARY KEY: {}
+    password text: {}
+    ssn text: {}
+    PRIMARY KEY (bank {})
+```
+Fraud detection has been a nice use case for graphs. Check this https://github.com/neo4j-contrib/gists/blob/master/other/BankFraudDetection.adoc[reference].
+
+
+==== Further Work
+
+We are aware that this first version is very tight to a single example. We plan to expand this connector to more general cases, improve mappings, add tricks and smart YAML files that can infer some patterns into Cassandra Schema and suggest an initial translate to Neo4j.
+
+We also plan to add more flexibility to Neo4j mapping and avoid performance issues. We are aware that declaring all fields might be a little inconvenient too, so we plan to automate this process in order to make it less verbose.
+
+Another further work consists into organising better directories to the generated files and add Travis CI support, together with a better integration tests suite.
