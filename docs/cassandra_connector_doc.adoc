@@ -111,10 +111,11 @@ Above example denotes that __artist__ is selected to be a constraint. We cannot 
 
 ==== Running the script with filled schema.yaml file
 
-After filling up the empty brackets, save the file and run the script ::connector.py::, now specifying the __filled__ option:
+After filling up the empty brackets, save the file and run the script ::connector.py::, now specifying the path of __schema.yaml__ file, in case you have changed its default directory:
 ```
-python connector.py filled
+python connector.py schema.yaml
 ```
+(The above example assumes that you are under /connector folder and the proper;y filled __schema.yaml__ file is placed there).
 
 Also, it is into this file that you must specify the queries that will have a result set transferred to Neo4j. Let's analyse the basic structure:
 
