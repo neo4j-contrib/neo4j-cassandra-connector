@@ -45,8 +45,6 @@ class CassandraConnector(object):
   def export(self):
     tableNames = self.getTables()
     fileNames = [t + "_results.csv" for t in tableNames]
-    print(tableNames)
-    print(fileNames)
 
     for t in tableNames:
       results_file = codecs.open(t + "_results.csv", encoding='utf-8', mode='w+')
@@ -83,7 +81,6 @@ if __name__ == "__main__":
   elif args.action == 'export':
     if args.tables:
       tables = args.tables.split(",")
-      print(tables)
       connector = CassandraConnector(keyspace, tables=tables)
     else:
       connector = CassandraConnector(keyspace)
