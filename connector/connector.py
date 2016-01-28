@@ -21,11 +21,12 @@ class CassandraConnector(object):
 
   """
 
-  def __init__(self, keyspace_name, tables=None, queries=None):
+  def __init__(self, keyspace_name, tables=None, schema_file=None, queries=None):
     self.KEYSPACE = keyspace_name
     self.session = Cluster().connect(self.KEYSPACE)
     self.keyspace_metadata = self.session.cluster.metadata.keyspaces[self.KEYSPACE]
     self.tables = tables
+    self.schema_file = schema_file
 
   def getTables(self):
     if self.tables:
@@ -53,7 +54,7 @@ class CassandraConnector(object):
       writer.writerow(self.getColumnsForTable(t))
       writer.writerows([(e for e in row) for row in rows])
 
-    cypher_queries_gen = CypherQueriesGenerator(self.keyspace_metadata)
+    cypher_queries_gen = CypherQueriesGenerator(self.keyspace_metadata, schema_file)
     cypher_queries_gen.generate()
     cypher_queries_gen.build_queries(tableNames, fileNames)
 
@@ -67,13 +68,19 @@ if __name__ == "__main__":
   parser.add_argument("action", type=str, help="Specify action, 'parse' to generate schema.yaml file. Then 'export' to export to Neo4j.", choices=["parse", "export"])
   parser.add_argument("-k", "--keyspace", type=str, help="Specify the Cassandra keyspace. If no keyspace is specified then 'playlist' will be used by default")
   parser.add_argument("-t", "--tables", type=str, help="Specify Cassandra table(s) to export to Neo4j in a comma separated list. If not specified then all tables will be exported.")
+  parser.add_argument("-f", "--file", type=str, help="Specify the schema file which defines the Cassandra to Neo4j property graph data model mapping. If not specified then schema.yaml will be used.")
 
   args=parser.parse_args()
-  keyspace = ''
+  #keyspace = ''
   if args.keyspace:
     keyspace = args.keyspace
   else:
     keyspace = 'playlist'
+
+  if args.file:
+    schema_file = args.file
+  else:
+    schema_file = "schema.yaml"
 
   if args.action == "parse":
     connector = CassandraConnector(keyspace)
@@ -81,7 +88,7 @@ if __name__ == "__main__":
   elif args.action == 'export':
     if args.tables:
       tables = args.tables.split(",")
-      connector = CassandraConnector(keyspace, tables=tables)
+      connector = CassandraConnector(keyspace, tables=tables, schema_file=schema_file)
     else:
       connector = CassandraConnector(keyspace)
 
