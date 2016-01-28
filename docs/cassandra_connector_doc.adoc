@@ -11,13 +11,9 @@ toc::[]
 
 It is a tool that enables you to migrate information that is inside Cassandra to a Neo4j property graph structure. 
 
-=== A little longer explanation
-
-It's way challenging to map a database like Cassandra to a graph world. But we tried our best here.
-
 ==== About this first version
 
-The main goal here is to provide a direct way to map a Cassandra schema to Neo4j and import result sets that come from Cassandra columns to Neo4j graph model, generating a meaningful representation of nodes and relationships. This translation is made by inserting CQL queries via Python Cassandra Driver into a  file, filling up a YAML file representing the schema of a keyspace and then running the queries. The final output should be a graph into Neo4j with a file containing the corresponding Cypher queries. The following sections will guide through this process and also provide some mapping examples.
+The main goal here is to provide a direct way to map a Cassandra schema to Neo4j and import result sets that come from Cassandra columns to Neo4j property graph model, generating a meaningful representation of nodes and relationships. This translation is made by inserting CQL queries via Python Cassandra Driver into a  file, filling up a YAML file representing the schema of a keyspace and then running the queries. The final output should be a graph into Neo4j with a file containing the corresponding Cypher queries. The following sections will guide through this process and also provide some mapping examples.
 
 **At this point, only Python 3 is supported**. Please be aware that Python 2 can bring up encoding problems.
 
@@ -25,23 +21,26 @@ The main goal here is to provide a direct way to map a Cassandra schema to Neo4j
 
 To use this initial version, you must:
 
-* Download and install link: http://cassandra.apache.org/download/[Cassandra].
+* Download and install http://cassandra.apache.org/download/[Cassandra].
 * Start Cassandra by running ```./bin/cassandra```
-* Download and install link: http://neo4j.com/download/other-releases/[Neo4j]. We recommend versions 2.3.1 and above.
+* Download and install http://neo4j.com/download/other-releases/[Neo4j]. We recommend versions 2.3.1 and above.
 * Start Neo4j.
-* Populate a Sample DB in Cassandra. Simply go to ::db_gen:: folder, start Cassandra ::cqlsh:: and invoke the command ::SOURCE '/playlist.cql'::. You can also provide the absolute path of the file. This will populate your Cassandra database with some Tracks and Artists database.
+* Populate a Sample DB in Cassandra. Simply go to `db_gen` directory, start Cassandra `cqlsh` and invoke the command `SOURCE '/playlist.cql'`. You can also provide the absolute path of the file. This will populate your Cassandra database with a sample Tracks and Artists database.
 
 ==== Generating a schema.yaml file
 
 After populating your initial database, you must generate a file to properly map a Cassandra Schema to a graph. Do the following:
 
+* Install project dependencies: `pip install -r requirements.txt`
 * Into the project directory, navigate to the subfolder __connector/__
-* Run the script ::connector.py::. Invoke it with ::python connector.py::. Note that Python ```cassandra-driver``` is required.
-* Some output files will be generated. At this stage, take a look into the generated ::schema.yaml:: file. It contains a YAML representation of Cassandra Schema. 
+* Run the script `connector.py`. Invoke it with `python connector.py parse -k playlist`.
+* Some output files will be generated. At this stage, take a look into the generated `schema.yaml` file. It contains a YAML representation of the Cassandra schema with placeholders for specifying how to convert this Cassandra schema into a Neo4j property graph data model.
 
-The next step consists into filling up this file with mapping information. Check out the next section for more information.
+The next step consists of populating the placeholders in this file with mapping information. Check out the next section for more information.
 
-==== Filling up schema.yaml file
+==== Configure data model mappings
+
+In order to import data into Neo4j the mapping from Cassandra schema to Neo4j property graph must be specified. This is done by populating the placeholders in the generated schema.yaml file.
 
 __schema.yaml__ file might have the following look and feel:
 
@@ -111,64 +110,27 @@ Above example denotes that __artist__ is selected to be a constraint. We cannot 
 
 ==== Running the script with filled schema.yaml file
 
-After filling up the empty brackets, save the file and run the script ::connector.py::, now specifying the path of __schema.yaml__ file, in case you have changed its default directory:
-```
-python connector.py schema.yaml
-```
-(The above example assumes that you are under /connector folder and the proper;y filled __schema.yaml__ file is placed there).
-
-Also, it is into this file that you must specify the queries that will have a result set transferred to Neo4j. Let's analyse the basic structure:
+After filling up the empty brackets, save the file and run the script `connector.py`, now specifying the tables you wish to export from Cassandra:
 
 ```
-cluster = Cluster()
-session = cluster.connect('playlist')
-meta_str = session.cluster.metadata.export_schema_as_string()
-keyspace = session.cluster.metadata.keyspaces["playlist"]```
-
-The section above declares Cassandra specific connection information plus a specific Keyspace (in this case, __playlist__). 
-
-```
-music_results_file = codecs.open('music_results.csv', encoding='utf-8', mode='w+')
-rows = session.execute('SELECT * FROM track_by_id')
-writer = csv.writer(music_results_file)
-writer.writerow(['track_id', 'artist', 'genre', 'music_file', 'track', 'track_length_in_seconds'])
-writer.writerows([(track.track_id, track.artist, track.genre, track.music_file, track.track, track.track_length_in_seconds) for track in rows])
+python connector.py export -k playlist -t track_by_id,artists_by_first_letter
 ```
 
-This section contains the query itself. It should be saved into a CSV file.
-
-The first step here is to create a CSV file. We have named this first example as __'music_results.csv'__. Then CQL query is invoked. We use Python CSV library to manage the file write. We acquire a writer object, then we write the headers, with __writerow__ method (corresponding to column key names) and on the sequence we write the results, with __writerows__. 
-
-**Important points here** For the CSV header, please keep the same names that you have in your schema. Mistyped names will be unconsidered. Also, declare all the fields, without omitting any of them. At the moment we support only CSVs with all the columns of a table. This is necessary for a match with an intermediate class that we use for Nodes and Relationships generation.
-
-**It is important to separate different queries results into different CSV files**. Note our example. We are querying over **track_by_id** and **artists_by_first_letter**. Each result set has its own CSV file, as you can see below in the following section:
+The schema YAML file name (if different than `schema.yaml`) can also be specifed as a command line argument. For example:
 
 ```
-artists_names_results_file = codecs.open('artists_names_results.csv', encoding='utf-8', mode='w+')
-rows = session.execute('SELECT * FROM artists_by_first_letter')
-writer = csv.writer(artists_names_results_file)
-writer.writerow(['first_letter', 'artist'])
-writer.writerows([(artistt.first_letter, artistt.artist) for artistt in rows])
+python connector.py export -k playlist -t track_by_id,artists_by_first_letter -f my_schema_file.yaml
 ```
-
-Last section contains the Cypher queries generation:
-
-```
-cypher_queries_gen = CypherQueriesGenerator(keyspace)
-cypher_queries_gen.generate()
-cypher_queries_gen.build_queries(["track_by_id", "artists_by_first_letter"], ["music_results.csv", "artists_names_results.csv"])
-```
-__build_queries__ receives an array of the tables that should be brought to Neo4j and the corresponding array of files containing the CSV files with the respective result sets. Let's check the expected output into the next section.
 
 ==== Mapping data into Cassandra to Neo4j
 
-The YAML file will be parsed into Cypher queries. A file called **cypher_** will be generated in your directory. It contains the Cypher queries that will generate Nodes and Relationship into a graph structure. After generated, the queries are automatically executed by http://py2neo.org/2.0/[Py2Neo].
+The YAML file will be parsed into Cypher queries. A file called **cypher_** will be generated in your directory. It contains the Cypher queries that will generate Nodes and Relationship into a graph structure. After generated, the queries are automatically executed by http://py2neo.org/2.0/[Py2Neo] using the Neo4j connection parameters specified in `schema.yaml`.
 
 **The keyspace from Cassandra will be translated as a label for every generated node in Neo4j.**
 
-Basically we were willing to have __Track__ nodes and __Artist__ nodes, connected by artist fields. We also wanted to make a constraint on artist by it's name - we could not have two different nodes with similar artist names.
+Using the sample Artists and Tracks dataset, we have __Track__ nodes and __Artist__ nodes, connected by artist fields. We also wanted to make a constraint on artist by its name - we could not have two different nodes with similar artist names.
 
-You should end up seeing several ::artist:: and ::track:: nodes and several relationships between them:
+You should end up seeing several `artist` and `track` nodes and several relationships between them:
 
 image::resources/images/intro.png[Initial Import to Neo4j]
 
@@ -209,4 +171,4 @@ We are aware that this first version is very tight to a single example. We plan 
 
 We also plan to add more flexibility to Neo4j mapping and avoid performance issues. We are aware that declaring all fields might be a little inconvenient too, so we plan to automate this process in order to make it less verbose.
 
-Another further work consists into organising better directories to the generated files and add Travis CI support, together with a better integration tests suite.
+Another further work consists of organising better directories for the generated files and add Travis CI support, together with a better integration tests suite.
