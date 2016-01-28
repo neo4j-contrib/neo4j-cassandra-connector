@@ -47,9 +47,11 @@ class CypherQueriesGenerator(object):
     info_tuple = zip(tables, result_csvs, columns, nodes_structure)
     for element in info_tuple:
       element = Builder(element[0], element[1], element[2], element[3])
-      if(element.node_structure.constraints):
+      if(element and element.node_structure and element.node_structure.constraints):
         constraint_query = "CREATE CONSTRAINT ON (n:{label}) ASSERT n.{constraint} IS UNIQUE;\n".format(label=self.remove_composed_label(element.node_structure.label), constraint=element.node_structure.constraints[0])
         cypher_file.write(constraint_query)
+      else:
+        break
       params_hash = self.build_params_hash(element.node_structure)
       params_hash_str = str(params_hash).replace("\'", "")
       unique_hash = self.build_unique_hash(element.node_structure)
@@ -91,17 +93,18 @@ class CypherQueriesGenerator(object):
       return
     head_node = None
     for node in nodes:
-      if (node.constraints):
+      if (node and node.constraints):
         head_node = node
     Builder = namedtuple('Builder', 'node_name csv_file column_size node_structure')
     for element in info_tuple:
       element = Builder(element[0], element[1], element[2], element[3])
-      if(element.node_structure.label == head_node.label):
+      if(element and element.node_structure and element.node_structure.label and element.node_structure.label == head_node.label):
         continue
       path = "file://" + os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
       rel_type = self.generate_rel_type(self.remove_composed_label(head_node.label), self.remove_composed_label(element.node_structure.label))
-      query = "LOAD CSV WITH HEADERS FROM \'{path}/{csv_file}\' AS line MERGE (h{hlabel} {{ {hkey}: line.{hkey} }}) MERGE (n{nlabel} {{ {nkey}: line.{nkey} }}) CREATE UNIQUE (n)-[:{rel_type}]->(h);\n".format(path=path, csv_file=element.csv_file, hlabel=head_node.label, hkey=head_node.constraints[0], nkey=element.node_structure.constraints[0], rel_type=rel_type, nlabel=element.node_structure.label)
-      cypher_file.write(query)
+      if element.node_structure.constraints:
+        query = "LOAD CSV WITH HEADERS FROM \'{path}/{csv_file}\' AS line MERGE (h{hlabel} {{ {hkey}: line.{hkey} }}) MERGE (n{nlabel} {{ {nkey}: line.{nkey} }}) CREATE UNIQUE (n)-[:{rel_type}]->(h);\n".format(path=path, csv_file=element.csv_file, hlabel=head_node.label, hkey=head_node.constraints[0], nkey=element.node_structure.constraints[0], rel_type=rel_type, nlabel=element.node_structure.label)
+        cypher_file.write(query)
 
   def remove_composed_label(self, label):
     label = label.split(":")[-1]
@@ -120,15 +123,17 @@ class CypherQueriesGenerator(object):
 
   def build_unique_hash(self, node):
     params = {}
-    for constraint in node.constraints:
-      params.update({constraint: "line.{constraint}".format(constraint=constraint)})
+    if node and node.constraints:
+      for constraint in node.constraints:
+        params.update({constraint: "line.{constraint}".format(constraint=constraint)})
     return params
 
 
   def build_params_hash(self, node):
     params = {}
-    for key in node.properties.keys():
-      params.update({key: "line.{key}".format(key=key)})
+    if node:
+      for key in node.properties.keys():
+        params.update({key: "line.{key}".format(key=key)})
     return params
 
   def analyse_csv(self, result_csvs):
