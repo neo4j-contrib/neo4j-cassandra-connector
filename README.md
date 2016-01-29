@@ -1,9 +1,10 @@
-# Neo4j Cassandra Connector
+# Neo4j Cassandra Data Import Tool
 
-Welcome to [Neo4j](http://neo4j.com/) [Cassandra](http://cassandra.apache.org/) Connector. The main goal of this project is to provide a prototype for the task of importing a dataset from Cassandra into Neo4j. 
+Welcome to the [Neo4j](http://neo4j.com/) [Cassandra](http://cassandra.apache.org/) Data Import Tool project. The main goal of this project is to provide a prototype for the task of importing a dataset from Cassandra into Neo4j.
 
-Please be aware that this project is still under development and at this first stage it will work mainly for this restricted data collection. Please check our [docs](docs/cassandra_connector_doc.adoc) to have more information of the covered scenarios and a detailed instruction set for using this tool.
+Please be aware that this project is still under development and at this first stage will work only for a restricted set of data models. Please check our [docs](docs/cassandra_connector_doc.adoc) to have more information of the covered scenarios and a detailed instruction set for using this tool.
 
+**Looking for contributors** If you are interested in contributing to this project we would love to hear from you and encourage you to submit a Pull Request.
 
 ## Example usage
 
