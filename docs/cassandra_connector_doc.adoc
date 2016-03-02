@@ -64,6 +64,7 @@ Note the __{}__. It's possible to fill them up with the following options:
 * _p_, for regular node property (fill with __{p}__),
 * __r__ for relationship (fill with __{r}__),
 * __u__ for unique constraint field (fill with __{u}__)
+* __i__ to create an index on this property (fill with __{i}__)
 
 For example:
 
